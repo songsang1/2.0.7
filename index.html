@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121416" />
+    <title>莱特维健本地媒体资产库</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="rail">
+        <div class="brand-mark">莱</div>
+        <button class="rail-action active" title="资产库" data-nav="all">▣</button>
+        <button class="rail-action workflow-action" title="打开 AI 成片拆条" data-workflow="splitter">✂</button>
+        <button class="rail-action workflow-action" title="打开智能混剪" data-workflow="mixer">✦</button>
+        <button class="rail-action workflow-action" title="打开 AI 素材工作流" data-workflow="aivideo">◇</button>
+        <div class="rail-spacer"></div>
+        <button class="rail-action feedback-action" title="提交反馈" id="feedbackButton" aria-label="提交 Bug 或新需求">!</button>
+        <button class="rail-action" title="设置" id="settingsButton">⚙</button>
+      </aside>
+
+      <aside class="sidebar">
+        <div class="workspace-head">
+          <div>
+            <div class="eyebrow">LOCAL WORKSPACE</div>
+            <h1>本地资产库</h1>
+          </div>
+          <button class="icon-button" id="workspaceMenu" aria-label="工作区菜单">···</button>
+        </div>
+
+        <button class="import-button" id="importButton"><span>＋</span> 导入素材</button>
+        <input id="fileInput" type="file" hidden multiple accept="image/*,video/*,audio/*,.psd,.ai,.fig,.pdf" />
+
+        <div class="sidebar-search">
+          <span>⌕</span>
+          <input id="sidebarSearch" placeholder="快速搜索" />
+          <kbd>⌘ K</kbd>
+        </div>
+
+        <section class="nav-section">
+          <div class="section-label">资产库 <span id="totalCount">0</span></div>
+          <button class="nav-item selected" data-filter="all"><span class="nav-icon">▦</span>全部素材 <span class="nav-count" id="allCount">0</span></button>
+          <button class="nav-item" data-filter="favorites"><span class="nav-icon">★</span>已收藏 <span class="nav-count" id="favoriteCount">0</span></button>
+          <button class="nav-item" data-filter="recent"><span class="nav-icon">◷</span>最近添加</button>
+        </section>
+
+        <section class="nav-section folders-section">
+          <div class="section-label">文件夹 <button class="mini-add" id="addFolderButton">＋</button></div>
+          <div id="folderList"></div>
+        </section>
+
+        <section class="nav-section tag-section">
+          <div class="section-label">标签组 <button class="mini-add" id="addTagButton">＋</button></div>
+          <div id="tagList"></div>
+        </section>
+
+        <div class="storage-card">
+          <div class="storage-icon">◌</div>
+          <div class="storage-copy"><b>本地存储</b><span id="storageText">正在计算…</span></div>
+          <div class="storage-meter"><i id="storageMeter"></i></div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="crumbs"><span>资产库</span><b>/</b><strong id="currentLocation">全部素材</strong></div>
+          <div class="top-actions">
+            <button class="top-action" id="selectAllButton">选择</button>
+            <button class="top-action selection-tool" id="selectVisibleButton" hidden>全选</button>
+            <button class="top-action ghost" id="exportButton">⇩ 导出</button>
+            <button class="avatar">L</button>
+          </div>
+        </header>
+
+        <section class="content-head">
+          <div>
+            <div class="title-row"><h2 id="pageTitle">全部素材</h2><span class="live-pill"><i></i> 离线可用</span></div>
+            <p id="pageSubtitle">收集灵感，整理每一份创作素材</p>
+          </div>
+          <div class="view-controls">
+            <button class="view-button active" data-view="grid">▦</button>
+            <button class="view-button" data-view="list">☷</button>
+            <span class="divider"></span>
+            <button class="sort-button" id="sortButton">最近添加⌄</button>
+          </div>
+        </section>
+
+        <section class="smart-search">
+          <span class="search-icon">⌕</span>
+          <input id="searchInput" placeholder="搜索素材、标签或转录内容…" />
+          <span class="search-hint">支持语义搜索</span>
+          <button id="clearSearch" class="clear-search" hidden>×</button>
+        </section>
+
+        <div class="active-filters" id="activeFilters"></div>
+
+        <section class="dropzone" id="dropzone">
+          <div class="dropzone-inner"><span class="drop-icon">↓</span><div><b>拖放文件到这里</b><span>支持图片、视频、音频和设计文件；拖动素材卡可直接进入 Photoshop / 剪映</span></div><button id="dropImport">浏览文件</button></div>
+        </section>
+
+        <section class="asset-section">
+          <div class="section-toolbar"><span id="resultSummary">0 个素材</span><span class="selection-status" id="selectionStatus" hidden></span><div><button class="toolbar-link" id="toggleTagMode">＋ 批量标签</button><button class="toolbar-link batch-tag-apply" id="applyBatchTags" hidden disabled>添加标签</button><button class="toolbar-link" id="removeSelected" hidden>移除所选</button></div></div>
+          <div class="asset-grid" id="assetGrid"></div>
+          <div class="empty-state" id="emptyState" hidden><div class="empty-art">✦</div><h3>还没有匹配的素材</h3><p>拖放文件到上方，或者调整搜索和筛选条件</p><button class="outline-button" id="emptyImport">导入第一份素材</button></div>
+        </section>
+        <section class="workflow-workspace" id="workflowWorkspace" hidden>
+          <div class="workflow-toolbar">
+            <button class="workflow-back" id="workflowBack">‹ 返回资产库</button>
+            <div class="workflow-heading"><strong id="workflowTitle">工作流</strong><span id="workflowPath"></span></div>
+            <span class="workflow-status">应用内工作区</span>
+          </div>
+          <div class="workflow-host" id="workflowHost"><div class="workflow-loading" id="workflowLoading"><span class="workflow-loading-spinner"></span><strong>正在准备工作区</strong><small>首次打开会在后台准备本地处理模块</small></div><div class="workflow-app" id="workflowApp"></div></div>
+        </section>
+      </main>
+
+      <aside class="inspector" id="inspector">
+        <div class="inspector-tabs"><button class="inspector-tab active">信息</button><button class="inspector-tab">提示词</button><button class="close-inspector" id="closeInspector">×</button></div>
+        <div id="inspectorContent" class="inspector-content"></div>
+      </aside>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="modal-backdrop" id="modalBackdrop" hidden><div class="modal" id="modal"></div></div>
+    <div class="preview-backdrop" id="previewBackdrop" hidden>
+      <div class="preview-dialog" role="dialog" aria-modal="true" aria-labelledby="previewTitle">
+        <div class="preview-head">
+          <div><h3 id="previewTitle">素材预览</h3><p id="previewMeta"></p></div>
+          <button class="close-preview" id="closePreview" aria-label="关闭预览">×</button>
+        </div>
+        <div class="preview-stage" id="previewMedia"></div>
+      </div>
+    </div>
+    <div class="feedback-backdrop" id="feedbackBackdrop" hidden>
+      <section class="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
+        <header class="feedback-head">
+          <div><h3 id="feedbackTitle">提交反馈</h3><p>问题、需求和截图会直接发送给产品维护人员。</p></div>
+          <button type="button" class="feedback-close" id="feedbackClose" aria-label="关闭反馈窗口">×</button>
+        </header>
+        <form id="feedbackForm" novalidate>
+          <div class="feedback-type" role="group" aria-label="反馈类型">
+            <button type="button" class="active" data-feedback-type="bug">Bug</button>
+            <button type="button" data-feedback-type="feature">新需求</button>
+          </div>
+          <div class="feedback-reporter-grid">
+            <label>提交人姓名<input id="feedbackReporterName" name="reporterName" maxlength="80" autocomplete="name" placeholder="例如：张三" required /></label>
+            <label>部门<input id="feedbackReporterDepartment" name="reporterDepartment" maxlength="80" placeholder="例如：电商运营部" required /></label>
+          </div>
+          <label>标题<input id="feedbackSubject" name="subject" maxlength="160" placeholder="用一句话描述问题或需求" required /></label>
+          <label>详细说明<textarea id="feedbackDescription" name="description" maxlength="5000" placeholder="请说明操作步骤、实际结果、期望结果；新需求可说明使用场景和预期效果。" required></textarea></label>
+          <div class="feedback-attachments">
+            <div><b>截图</b><span>最多 5 张，支持 PNG、JPG、WebP，单张不超过 10 MB</span></div>
+            <button type="button" class="feedback-upload" id="feedbackPickImages">添加图片</button>
+            <input id="feedbackImages" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden />
+          </div>
+          <div class="feedback-image-list" id="feedbackImageList" hidden></div>
+          <div class="feedback-diagnostics">提交时会附带当前页面、软件版本、Windows 系统信息和最近操作记录，便于定位问题。</div>
+          <footer class="feedback-actions"><span id="feedbackStatus" aria-live="polite"></span><button type="button" id="feedbackRetry" hidden>重试待发送</button><button type="button" id="feedbackCancel">取消</button><button type="submit" class="primary" id="feedbackSubmit">提交反馈</button></footer>
+        </form>
+      </section>
+    </div>
+    <script src="./timeline-engine.js"></script>
+    <script src="./app.js"></script>
+    <script src="./feedback.js"></script>
+  </body>
+</html>
